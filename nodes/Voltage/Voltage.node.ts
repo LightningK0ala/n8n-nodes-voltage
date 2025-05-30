@@ -102,7 +102,7 @@ export class Voltage implements INodeType {
 		const credentials = await this.getCredentials('voltageApi');
 
 		// Import the voltage-api-sdk CommonJS version directly
-		const { VoltageClient } = require('voltage-api-sdk/dist/index.cjs');
+		const { VoltageClient } = require('voltage-api-sdk');
 
 		// Initialize Voltage client
 		const client = new VoltageClient({
