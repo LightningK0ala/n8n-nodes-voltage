@@ -420,13 +420,56 @@ export class Voltage implements INodeType {
 					let errorMessage = error instanceof Error ? error.message : String(error);
 					let errorDetails: any = {};
 
-					// Check if it's a VoltageApiError with more details
-					if (error && typeof error === 'object' && 'status' in error) {
+					// Enhanced error details for better debugging
+					if (error && typeof error === 'object') {
 						errorDetails = {
 							status: (error as any).status,
+							statusText: (error as any).statusText,
 							code: (error as any).code,
 							details: (error as any).details,
+							originalError: error,
 						};
+
+						// For HTTP errors, try to extract more information
+						if ((error as any).status) {
+							const status = (error as any).status;
+
+							if (status === 422) {
+								errorMessage = `Validation Error (422): The request data is invalid. Please check your parameters.`;
+
+								// Add the request data that was sent for debugging
+								if (resource === 'payment' && operation === 'createPaymentRequest') {
+									const paymentWalletId = this.getNodeParameter('paymentWalletId', i) as string;
+									const paymentKind = this.getNodeParameter('paymentKind', i) as string;
+									const currency = this.getNodeParameter('currency', i) as string;
+									const amountMsats = this.getNodeParameter('amountMsats', i) as number;
+									const description = this.getNodeParameter('description', i) as string;
+									const organizationId = this.getNodeParameter('organizationId', i) as string;
+									const environmentId = this.getNodeParameter('environmentId', i) as string;
+
+									errorDetails.requestData = {
+										organization_id: organizationId,
+										environment_id: environmentId,
+										payment: {
+											wallet_id: paymentWalletId,
+											currency: currency,
+											payment_kind: paymentKind,
+											amount_msats: amountMsats || null,
+											description: description || null,
+										},
+									};
+								}
+							} else if (status === 401) {
+								errorMessage = `Authentication Error (401): Invalid API key or credentials.`;
+							} else if (status === 403) {
+								errorMessage = `Permission Error (403): Access denied. Check your API key permissions.`;
+							} else if (status === 404) {
+								errorMessage = `Not Found (404): Organization, environment, or resource not found.`;
+							} else if (status >= 500) {
+								errorMessage = `Server Error (${status}): The Voltage API is experiencing issues.`;
+							}
+						}
+
 						// Provide more helpful message for JSON parsing errors
 						if (errorMessage === 'Failed to parse response as JSON') {
 							errorMessage = `API returned non-JSON response (Status: ${(error as any).status}). Check your API credentials and organization ID.`;
@@ -447,16 +490,46 @@ export class Voltage implements INodeType {
 
 				// Enhanced error message for better debugging
 				let enhancedError = error;
-				if (
-					error &&
-					typeof error === 'object' &&
-					'message' in error &&
-					(error as any).message === 'Failed to parse response as JSON'
-				) {
+				if (error && typeof error === 'object') {
 					const apiError = error as any;
-					enhancedError = new Error(
-						`Voltage API returned non-JSON response (Status: ${apiError.status}). This usually indicates an authentication issue or invalid organization ID. Please check your API credentials and organization ID.`,
-					);
+
+					if (apiError.status === 422) {
+						const debugInfo: any = {
+							status: apiError.status,
+							message: 'Validation Error: The request data is invalid',
+						};
+
+						// Add request data for debugging
+						if (resource === 'payment' && operation === 'createPaymentRequest') {
+							const paymentWalletId = this.getNodeParameter('paymentWalletId', i) as string;
+							const paymentKind = this.getNodeParameter('paymentKind', i) as string;
+							const currency = this.getNodeParameter('currency', i) as string;
+							const amountMsats = this.getNodeParameter('amountMsats', i) as number;
+							const description = this.getNodeParameter('description', i) as string;
+							const organizationId = this.getNodeParameter('organizationId', i) as string;
+							const environmentId = this.getNodeParameter('environmentId', i) as string;
+
+							debugInfo.requestData = {
+								organization_id: organizationId,
+								environment_id: environmentId,
+								payment: {
+									wallet_id: paymentWalletId,
+									currency: currency,
+									payment_kind: paymentKind,
+									amount_msats: amountMsats || null,
+									description: description || null,
+								},
+							};
+						}
+
+						enhancedError = new Error(
+							`Voltage API Validation Error (422): ${JSON.stringify(debugInfo, null, 2)}`,
+						);
+					} else if (apiError.message === 'Failed to parse response as JSON') {
+						enhancedError = new Error(
+							`Voltage API returned non-JSON response (Status: ${apiError.status}). This usually indicates an authentication issue or invalid organization ID. Please check your API credentials and organization ID.`,
+						);
+					}
 				}
 
 				throw new NodeOperationError(
