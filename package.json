@@ -1,54 +1,63 @@
 {
-  "name": "n8n-nodes-voltage",
-  "version": "0.1.0",
-  "description": "n8n community node to connect to Voltage API",
-  "keywords": [
-    "n8n-community-node-package"
-  ],
-  "license": "MIT",
-  "homepage": "https://voltageapi.com",
-  "author": {
-    "name": "Voltage",
-    "email": "support@voltageapi.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/voltage-api/n8n-nodes-voltage.git"
-  },
-  "main": "index.js",
-  "scripts": {
-    "build": "tsc && npm run copy:icons",
-    "copy:icons": "copyfiles -u 1 nodes/**/*.svg dist/",
-    "dev": "tsc --watch",
-    "format": "prettier nodes credentials --write",
-    "lint": "eslint nodes credentials package.json",
-    "lintfix": "eslint nodes credentials package.json --fix",
-    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes credentials package.json",
-    "test": "jest"
-  },
-  "files": [
-    "dist"
-  ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/VoltageApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/Voltage/Voltage.node.js"
-    ]
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.33.0",
-    "@typescript-eslint/parser": "^8.33.0",
-    "copyfiles": "^2.4.1",
-    "eslint": "^9.27.0",
-    "typescript": "^5.0.0",
-    "voltage-api-sdk": "^0.1.0"
-  },
-  "peerDependencies": {
-    "n8n-core": "*",
-    "n8n-workflow": "*"
-  }
+	"name": "n8n-nodes-voltage",
+	"version": "0.1.1",
+	"description": "n8n community node to connect to Voltage API",
+	"keywords": [
+		"n8n-community-node-package"
+	],
+	"license": "MIT",
+	"homepage": "https://voltageapi.com",
+	"author": {
+		"name": "Voltage",
+		"email": "support@voltageapi.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/voltage-api/n8n-nodes-voltage.git"
+	},
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc && npm run copy:icons",
+		"copy:icons": "copyfiles -u 1 nodes/**/*.svg dist/",
+		"dev": "tsc --watch",
+		"format": "prettier nodes credentials --write",
+		"format:check": "prettier nodes credentials --check",
+		"lint": "eslint nodes credentials",
+		"lintfix": "eslint nodes credentials --fix",
+		"prepublishOnly": "npm run build && npm run lint && npm run format:check",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage"
+	},
+	"files": [
+		"dist"
+	],
+	"dependencies": {
+		"voltage-api-sdk": "^0.1.0"
+	},
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"credentials": [
+			"dist/credentials/VoltageApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Voltage/Voltage.node.js"
+		]
+	},
+	"devDependencies": {
+		"@types/jest": "^29.5.0",
+		"@types/node": "^20.0.0",
+		"@typescript-eslint/eslint-plugin": "^8.33.0",
+		"@typescript-eslint/parser": "^8.33.0",
+		"copyfiles": "^2.4.1",
+		"eslint": "^9.27.0",
+		"jest": "^29.5.0",
+		"prettier": "^3.0.0",
+		"ts-jest": "^29.1.0",
+		"typescript": "^5.0.0"
+	},
+	"peerDependencies": {
+		"n8n-core": "*",
+		"n8n-workflow": "*"
+	}
 }

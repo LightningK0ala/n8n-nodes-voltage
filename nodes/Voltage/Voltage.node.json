@@ -1,4 +1,4 @@
 {
-  "node": "dist/nodes/Voltage/Voltage.node.js",
-  "credentials": "dist/credentials/VoltageApi.credentials.js"
+	"node": "dist/nodes/Voltage/Voltage.node.js",
+	"credentials": "dist/credentials/VoltageApi.credentials.js"
 }
