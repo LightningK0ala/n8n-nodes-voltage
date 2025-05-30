@@ -8,6 +8,8 @@ import {
 	IDataObject,
 } from 'n8n-workflow';
 
+declare const require: any;
+
 export class Voltage implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Voltage',
