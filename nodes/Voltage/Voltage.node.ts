@@ -41,6 +41,10 @@ export class Voltage implements INodeType {
 						name: 'Wallet',
 						value: 'wallet',
 					},
+					{
+						name: 'Payment',
+						value: 'payment',
+					},
 				],
 				default: 'wallet',
 			},
@@ -71,6 +75,32 @@ export class Voltage implements INodeType {
 				default: 'getAll',
 			},
 			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+					},
+				},
+				options: [
+					{
+						name: 'Create Payment Request',
+						value: 'createPaymentRequest',
+						description: 'Create a new payment request (invoice) and wait for it to be ready',
+						action: 'Create a payment request',
+					},
+					{
+						name: 'Get Payment',
+						value: 'getPayment',
+						description: 'Get an existing payment by ID',
+						action: 'Get a payment',
+					},
+				],
+				default: 'createPaymentRequest',
+			},
+			{
 				displayName: 'Organization ID',
 				name: 'organizationId',
 				type: 'string',
@@ -90,6 +120,165 @@ export class Voltage implements INodeType {
 				},
 				default: '',
 				description: 'The specific wallet ID to retrieve',
+			},
+			// Payment fields
+			{
+				displayName: 'Environment ID',
+				name: 'environmentId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+					},
+				},
+				default: '',
+				description: 'The environment ID for the payment',
+			},
+			{
+				displayName: 'Payment ID',
+				name: 'paymentId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['getPayment'],
+					},
+				},
+				default: '',
+				description: 'The payment ID to retrieve',
+			},
+			{
+				displayName: 'Wallet ID',
+				name: 'paymentWalletId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				default: '',
+				description: 'The wallet ID for the payment request',
+			},
+			{
+				displayName: 'Payment Kind',
+				name: 'paymentKind',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				options: [
+					{
+						name: 'Lightning (Bolt11)',
+						value: 'bolt11',
+						description: 'Lightning Network payment',
+					},
+					{
+						name: 'On-chain',
+						value: 'onchain',
+						description: 'Bitcoin on-chain payment',
+					},
+					{
+						name: 'BIP21',
+						value: 'bip21',
+						description: 'Unified payment (Lightning + On-chain)',
+					},
+				],
+				default: 'bolt11',
+				description: 'Type of payment to create',
+			},
+			{
+				displayName: 'Currency',
+				name: 'currency',
+				type: 'options',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				options: [
+					{
+						name: 'BTC',
+						value: 'btc',
+					},
+					{
+						name: 'USD',
+						value: 'usd',
+					},
+				],
+				default: 'btc',
+				description: 'Currency for the payment',
+			},
+			{
+				displayName: 'Amount (millisats)',
+				name: 'amountMsats',
+				type: 'number',
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				default: '',
+				description: 'Amount in millisatoshis. Leave empty for "any amount" invoice.',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				default: '',
+				description: 'Description for the payment request',
+			},
+			{
+				displayName: 'Additional Options',
+				name: 'additionalOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				displayOptions: {
+					show: {
+						resource: ['payment'],
+						operation: ['createPaymentRequest'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Max Polling Attempts',
+						name: 'maxAttempts',
+						type: 'number',
+						default: 30,
+						description: 'Maximum number of polling attempts',
+					},
+					{
+						displayName: 'Polling Interval (ms)',
+						name: 'intervalMs',
+						type: 'number',
+						default: 1000,
+						description: 'Interval between polling attempts in milliseconds',
+					},
+					{
+						displayName: 'Timeout (ms)',
+						name: 'timeoutMs',
+						type: 'number',
+						default: 30000,
+						description: 'Total timeout for polling in milliseconds',
+					},
+				],
 			},
 		],
 	};
@@ -154,6 +343,75 @@ export class Voltage implements INodeType {
 
 						returnData.push({
 							json: wallet as unknown as IDataObject,
+							pairedItem: {
+								item: i,
+							},
+						});
+					}
+				} else if (resource === 'payment') {
+					const organizationId = this.getNodeParameter('organizationId', i) as string;
+					const environmentId = this.getNodeParameter('environmentId', i) as string;
+
+					if (operation === 'createPaymentRequest') {
+						// Create payment request
+						const paymentWalletId = this.getNodeParameter('paymentWalletId', i) as string;
+						const paymentKind = this.getNodeParameter('paymentKind', i) as string;
+						const currency = this.getNodeParameter('currency', i) as string;
+						const amountMsats = this.getNodeParameter('amountMsats', i) as number;
+						const description = this.getNodeParameter('description', i) as string;
+						const additionalOptions = this.getNodeParameter('additionalOptions', i) as IDataObject;
+
+						// Generate a unique payment ID
+						const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+						const paymentData = {
+							id: paymentId,
+							wallet_id: paymentWalletId,
+							currency: currency as 'btc' | 'usd',
+							payment_kind: paymentKind as 'bolt11' | 'onchain' | 'bip21',
+							amount_msats: amountMsats || null,
+							description: description || null,
+						};
+
+						// Build polling config if provided
+						const pollingConfig: any = {};
+						if (additionalOptions.maxAttempts) {
+							pollingConfig.maxAttempts = additionalOptions.maxAttempts;
+						}
+						if (additionalOptions.intervalMs) {
+							pollingConfig.intervalMs = additionalOptions.intervalMs;
+						}
+						if (additionalOptions.timeoutMs) {
+							pollingConfig.timeoutMs = additionalOptions.timeoutMs;
+						}
+
+						const payment = await client.createPaymentRequest(
+							{
+								organization_id: organizationId,
+								environment_id: environmentId,
+								payment: paymentData,
+							},
+							Object.keys(pollingConfig).length > 0 ? pollingConfig : undefined,
+						);
+
+						returnData.push({
+							json: payment as unknown as IDataObject,
+							pairedItem: {
+								item: i,
+							},
+						});
+					} else if (operation === 'getPayment') {
+						// Get payment
+						const paymentId = this.getNodeParameter('paymentId', i) as string;
+
+						const payment = await client.getPayment({
+							organization_id: organizationId,
+							environment_id: environmentId,
+							payment_id: paymentId,
+						});
+
+						returnData.push({
+							json: payment as unknown as IDataObject,
 							pairedItem: {
 								item: i,
 							},

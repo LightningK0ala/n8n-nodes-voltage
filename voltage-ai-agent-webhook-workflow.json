@@ -1,0 +1,313 @@
+{
+	"name": "Voltage AI Agent - Get All Wallets API",
+	"nodes": [
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "voltage/wallets/get-all",
+				"responseMode": "responseNode",
+				"options": {
+					"noResponseBody": false
+				}
+			},
+			"id": "webhook-trigger-node",
+			"name": "Webhook Trigger",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 2,
+			"position": [800, 300],
+			"webhookId": "voltage-get-all-wallets"
+		},
+		{
+			"parameters": {
+				"jsCode": "// Validate and extract organization ID from webhook payload\nconst input = $input.first().json;\n\n// Extract organization ID from body, query params, or headers\nconst organizationId = input.body?.organizationId || \n                      input.body?.organization_id ||\n                      input.query?.organizationId ||\n                      input.query?.organization_id ||\n                      input.headers?.['x-organization-id'];\n\nif (!organizationId) {\n  throw new Error('Missing required parameter: organizationId. Please provide it in the request body, query parameters, or X-Organization-Id header.');\n}\n\n// Validate organization ID format (basic validation)\nif (typeof organizationId !== 'string' || organizationId.trim().length === 0) {\n  throw new Error('Invalid organizationId: must be a non-empty string.');\n}\n\nreturn {\n  organizationId: organizationId.trim(),\n  requestId: input.headers?.['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n  timestamp: new Date().toISOString()\n};"
+			},
+			"id": "validate-input-node",
+			"name": "Validate Input",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1020, 300]
+		},
+		{
+			"parameters": {
+				"resource": "wallet",
+				"operation": "getAll",
+				"organizationId": "={{ $json.organizationId }}"
+			},
+			"id": "voltage-get-wallets-node",
+			"name": "Get All Wallets",
+			"type": "n8n-nodes-voltage.voltage",
+			"typeVersion": 1,
+			"position": [1240, 300],
+			"credentials": {
+				"voltageApi": {
+					"id": "voltage-api-credentials",
+					"name": "Voltage API Credentials"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "strict"
+					},
+					"conditions": [
+						{
+							"id": "wallet-success-condition",
+							"leftValue": "={{ $json.error }}",
+							"rightValue": "",
+							"operator": {
+								"type": "undefined",
+								"operation": "undefined"
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "check-success-node",
+			"name": "Check Success",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2,
+			"position": [1460, 300]
+		},
+		{
+			"parameters": {
+				"jsCode": "// Process and format wallet data for AI agent consumption\nconst wallets = $input.all();\nconst metadata = $('Validate Input').first().json;\n\n// Extract wallet data and ensure consistent structure\nconst processedWallets = wallets.map(wallet => {\n  const walletData = wallet.json;\n  return {\n    id: walletData.id,\n    name: walletData.name || null,\n    type: walletData.type || null,\n    status: walletData.status || null,\n    organization_id: walletData.organization_id,\n    created_at: walletData.created_at || null,\n    updated_at: walletData.updated_at || null,\n    balance: walletData.balance || null,\n    currency: walletData.currency || null,\n    network: walletData.network || null,\n    address: walletData.address || null,\n    // Include any other fields that might be present\n    ...Object.fromEntries(\n      Object.entries(walletData).filter(([key]) => \n        !['id', 'name', 'type', 'status', 'organization_id', 'created_at', 'updated_at', 'balance', 'currency', 'network', 'address'].includes(key)\n      )\n    )\n  };\n});\n\n// Return structured response for AI agent\nreturn {\n  success: true,\n  data: {\n    wallets: processedWallets,\n    count: processedWallets.length,\n    organization_id: metadata.organizationId\n  },\n  meta: {\n    request_id: metadata.requestId,\n    timestamp: new Date().toISOString(),\n    operation: 'get_all_wallets',\n    api_version: 'v1'\n  }\n};"
+			},
+			"id": "format-success-response-node",
+			"name": "Format Success Response",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1680, 200]
+		},
+		{
+			"parameters": {
+				"jsCode": "// Handle API errors and format error response for AI agent\nconst errorData = $input.first().json;\nconst metadata = $('Validate Input').first().json;\n\nreturn {\n  success: false,\n  error: {\n    code: errorData.errorDetails?.code || 'VOLTAGE_API_ERROR',\n    message: errorData.error || 'Unknown error occurred while fetching wallets',\n    details: errorData.errorDetails || {},\n    organization_id: metadata.organizationId\n  },\n  meta: {\n    request_id: metadata.requestId,\n    timestamp: new Date().toISOString(),\n    operation: 'get_all_wallets',\n    api_version: 'v1'\n  }\n};"
+			},
+			"id": "format-error-response-node",
+			"name": "Format Error Response",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1680, 400]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={{ $json }}",
+				"options": {
+					"responseHeaders": {
+						"entries": [
+							{
+								"name": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"name": "X-Request-ID",
+								"value": "={{ $json.meta.request_id }}"
+							}
+						]
+					}
+				}
+			},
+			"id": "success-response-node",
+			"name": "Success Response",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [1900, 200]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseCode": 400,
+				"responseBody": "={{ $json }}",
+				"options": {
+					"responseHeaders": {
+						"entries": [
+							{
+								"name": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"name": "X-Request-ID",
+								"value": "={{ $json.meta.request_id }}"
+							}
+						]
+					}
+				}
+			},
+			"id": "error-response-node",
+			"name": "Error Response",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [1900, 400]
+		},
+		{
+			"parameters": {
+				"jsCode": "// Handle validation errors\nconst error = $input.first().error;\n\nreturn {\n  success: false,\n  error: {\n    code: 'VALIDATION_ERROR',\n    message: error.message || 'Invalid request parameters',\n    details: {\n      type: 'validation_error',\n      cause: error.cause || 'Missing or invalid organizationId'\n    }\n  },\n  meta: {\n    request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n    timestamp: new Date().toISOString(),\n    operation: 'get_all_wallets',\n    api_version: 'v1'\n  }\n};"
+			},
+			"id": "format-validation-error-node",
+			"name": "Format Validation Error",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1240, 500]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseCode": 400,
+				"responseBody": "={{ $json }}",
+				"options": {
+					"responseHeaders": {
+						"entries": [
+							{
+								"name": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"name": "X-Request-ID",
+								"value": "={{ $json.meta.request_id }}"
+							}
+						]
+					}
+				}
+			},
+			"id": "validation-error-response-node",
+			"name": "Validation Error Response",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [1460, 500]
+		}
+	],
+	"connections": {
+		"Webhook Trigger": {
+			"main": [
+				[
+					{
+						"node": "Validate Input",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Validate Input": {
+			"main": [
+				[
+					{
+						"node": "Get All Wallets",
+						"type": "main",
+						"index": 0
+					}
+				]
+			],
+			"error": [
+				[
+					{
+						"node": "Format Validation Error",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get All Wallets": {
+			"main": [
+				[
+					{
+						"node": "Check Success",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Check Success": {
+			"main": [
+				[
+					{
+						"node": "Format Success Response",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Format Error Response",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Format Success Response": {
+			"main": [
+				[
+					{
+						"node": "Success Response",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Format Error Response": {
+			"main": [
+				[
+					{
+						"node": "Error Response",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Format Validation Error": {
+			"main": [
+				[
+					{
+						"node": "Validation Error Response",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"createdAt": "2024-01-15T10:00:00.000Z",
+	"id": "voltage-ai-agent-webhook-workflow",
+	"meta": {
+		"instanceId": "n8n-instance"
+	},
+	"name": "Voltage AI Agent - Get All Wallets API",
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"staticData": {},
+	"tags": [
+		{
+			"createdAt": "2024-01-15T10:00:00.000Z",
+			"updatedAt": "2024-01-15T10:00:00.000Z",
+			"id": "voltage-api-tag",
+			"name": "voltage-api"
+		},
+		{
+			"createdAt": "2024-01-15T10:00:00.000Z",
+			"updatedAt": "2024-01-15T10:00:00.000Z",
+			"id": "ai-agent-tag",
+			"name": "ai-agent"
+		},
+		{
+			"createdAt": "2024-01-15T10:00:00.000Z",
+			"updatedAt": "2024-01-15T10:00:00.000Z",
+			"id": "webhook-api-tag",
+			"name": "webhook-api"
+		}
+	],
+	"triggerCount": 0,
+	"updatedAt": "2024-01-15T10:00:00.000Z",
+	"versionId": "1"
+}

@@ -1,0 +1,149 @@
+{
+	"name": "Voltage - Get All Wallets",
+	"nodes": [
+		{
+			"parameters": {},
+			"id": "b5b8c5e0-1234-4567-8901-123456789012",
+			"name": "When clicking \"Test workflow\"",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [800, 300]
+		},
+		{
+			"parameters": {
+				"resource": "wallet",
+				"operation": "getAll",
+				"organizationId": "={{ $json.organizationId || 'your-organization-id' }}"
+			},
+			"id": "voltage-get-wallets-node",
+			"name": "Get All Wallets",
+			"type": "n8n-nodes-voltage.voltage",
+			"typeVersion": 1,
+			"position": [1020, 300],
+			"credentials": {
+				"voltageApi": {
+					"id": "voltage-api-credentials",
+					"name": "Voltage API Credentials"
+				}
+			}
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "strict"
+					},
+					"conditions": [
+						{
+							"id": "wallet-success-condition",
+							"leftValue": "={{ $json.error }}",
+							"rightValue": "",
+							"operator": {
+								"type": "undefined",
+								"operation": "undefined"
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "check-success-node",
+			"name": "Check Success",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2,
+			"position": [1240, 300]
+		},
+		{
+			"parameters": {
+				"jsCode": "// Process and format wallet data for AI agent consumption\nconst wallets = $input.all();\n\nconst processedWallets = wallets.map(wallet => ({\n  id: wallet.json.id,\n  name: wallet.json.name,\n  type: wallet.json.type,\n  status: wallet.json.status,\n  organization_id: wallet.json.organization_id,\n  created_at: wallet.json.created_at,\n  updated_at: wallet.json.updated_at,\n  // Include any additional fields that might be useful\n  ...wallet.json\n}));\n\n// Return formatted response for AI agent\nreturn {\n  success: true,\n  count: processedWallets.length,\n  wallets: processedWallets,\n  timestamp: new Date().toISOString(),\n  operation: 'get_all_wallets'\n};"
+			},
+			"id": "format-response-node",
+			"name": "Format Response",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1460, 200]
+		},
+		{
+			"parameters": {
+				"jsCode": "// Handle API errors and format error response for AI agent\nconst errorData = $input.first().json;\n\nreturn {\n  success: false,\n  error: {\n    message: errorData.error || 'Unknown error occurred',\n    details: errorData.errorDetails || {},\n    timestamp: new Date().toISOString(),\n    operation: 'get_all_wallets'\n  }\n};"
+			},
+			"id": "format-error-node",
+			"name": "Format Error",
+			"type": "n8n-nodes-base.code",
+			"typeVersion": 2,
+			"position": [1460, 400]
+		}
+	],
+	"connections": {
+		"When clicking \"Test workflow\"": {
+			"main": [
+				[
+					{
+						"node": "Get All Wallets",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get All Wallets": {
+			"main": [
+				[
+					{
+						"node": "Check Success",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Check Success": {
+			"main": [
+				[
+					{
+						"node": "Format Response",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Format Error",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"createdAt": "2024-01-15T10:00:00.000Z",
+	"id": "voltage-get-all-wallets-workflow",
+	"meta": {
+		"instanceId": "n8n-instance"
+	},
+	"name": "Voltage - Get All Wallets",
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"staticData": {},
+	"tags": [
+		{
+			"createdAt": "2024-01-15T10:00:00.000Z",
+			"updatedAt": "2024-01-15T10:00:00.000Z",
+			"id": "voltage-api-tag",
+			"name": "voltage-api"
+		},
+		{
+			"createdAt": "2024-01-15T10:00:00.000Z",
+			"updatedAt": "2024-01-15T10:00:00.000Z",
+			"id": "wallet-management-tag",
+			"name": "wallet-management"
+		}
+	],
+	"triggerCount": 0,
+	"updatedAt": "2024-01-15T10:00:00.000Z",
+	"versionId": "1"
+}

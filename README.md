@@ -6,15 +6,18 @@ A custom n8n community node for integrating with the Voltage API. This node allo
 
 - **Get All Wallets**: Retrieve all wallets in an organization
 - **Get Wallet**: Retrieve a specific wallet by ID
+- **Create Payment Request**: Create Lightning, On-chain, or BIP21 payment requests (invoices) with automatic polling
+- **Get Payment**: Retrieve payment details by ID
 - **Configurable Authentication**: Support for API key, base URL, and timeout settings
 - **Error Handling**: Robust error handling with detailed error messages
+- **Polling Support**: Automatic polling for payment request generation with configurable timeouts
 
 ## Installation
 
 ### Prerequisites
 
 1. n8n installed globally: `npm install n8n -g`
-2. The Voltage API SDK linked: `npm link @voltage/api-sdk`
+2. The Voltage API SDK linked: `npm link voltage-api-sdk`
 
 ### Install the Node
 
@@ -49,23 +52,59 @@ The node requires Voltage API credentials with the following fields:
 
 ### Node Parameters
 
-- **Resource**: Currently supports "Wallet"
+- **Resource**: Choose between "Wallet" or "Payment"
 - **Operation**:
-  - "Get All" - Retrieve all wallets in an organization
-  - "Get" - Retrieve a specific wallet by ID
+  - **Wallet Operations**:
+    - "Get All" - Retrieve all wallets in an organization
+    - "Get" - Retrieve a specific wallet by ID
+  - **Payment Operations**:
+    - "Create Payment Request" - Create a new payment request (invoice) and wait for it to be ready
+    - "Get Payment" - Retrieve payment details by ID
 - **Organization ID**: The organization ID to query (required)
-- **Wallet ID**: The specific wallet ID (required for "Get" operation)
+- **Environment ID**: The environment ID (required for payment operations)
+- **Wallet ID**: The specific wallet ID (required for "Get wallet" operation)
+
+#### Payment Request Parameters
+
+- **Payment Wallet ID**: Wallet ID for the payment request
+- **Payment Kind**: Type of payment (Lightning/Bolt11, On-chain, or BIP21)
+- **Currency**: BTC or USD
+- **Amount (millisats)**: Amount in millisatoshis (leave empty for "any amount" invoice)
+- **Description**: Description for the payment request
+- **Additional Options**: Configure polling behavior (max attempts, interval, timeout)
+
+#### Get Payment Parameters
+
+- **Payment ID**: The specific payment ID to retrieve
 
 ## Usage
 
+### Wallet Operations
+
 1. Add the Voltage node to your workflow
 2. Configure the credentials with your Voltage API key
-3. Set the organization ID
-4. Choose the operation (Get All or Get specific wallet)
-5. If getting a specific wallet, provide the wallet ID
+3. Set the resource to "Wallet"
+4. Set the organization ID
+5. Choose the operation (Get All or Get specific wallet)
+6. If getting a specific wallet, provide the wallet ID
+7. Execute the workflow
+
+### Payment Operations
+
+1. Add the Voltage node to your workflow
+2. Configure the credentials with your Voltage API key
+3. Set the resource to "Payment"
+4. Set the organization ID and environment ID
+5. Choose the operation:
+   - **Create Payment Request**: Fill in wallet ID, payment kind, currency, amount, and description
+   - **Get Payment**: Provide the payment ID to retrieve
 6. Execute the workflow
 
+The node will automatically handle polling for payment request generation, waiting until the Lightning invoice or Bitcoin address is ready.
+
 ## Example Workflow
+
+### Wallet Example
 
 ```json
 {
@@ -77,6 +116,33 @@ The node requires Voltage API credentials with the following fields:
 				"resource": "wallet",
 				"operation": "getAll",
 				"organizationId": "your-organization-id"
+			},
+			"credentials": {
+				"voltageApi": "your-voltage-credentials"
+			}
+		}
+	]
+}
+```
+
+### Payment Request Example
+
+```json
+{
+	"nodes": [
+		{
+			"name": "Create Lightning Invoice",
+			"type": "n8n-nodes-voltage.voltage",
+			"parameters": {
+				"resource": "payment",
+				"operation": "createPaymentRequest",
+				"organizationId": "your-organization-id",
+				"environmentId": "your-environment-id",
+				"paymentWalletId": "your-wallet-id",
+				"paymentKind": "bolt11",
+				"currency": "btc",
+				"amountMsats": 150000,
+				"description": "Payment for services"
 			},
 			"credentials": {
 				"voltageApi": "your-voltage-credentials"
@@ -117,7 +183,7 @@ npm run dev
 
 ## Dependencies
 
-- **@voltage/api-sdk**: The official Voltage API SDK
+- **voltage-api-sdk**: The official Voltage API SDK
 - **n8n-workflow**: n8n workflow types and utilities
 - **n8n-core**: n8n core functionality
 
