@@ -44,7 +44,7 @@ npm run build
 The node requires Voltage API credentials with the following fields:
 
 - **API Key**: Your Voltage API key (starts with `vltg_`)
-- **Base URL**: The Voltage API base URL (default: `https://voltageapi.com/api/v1`)
+- **Base URL**: The Voltage API base URL (default: `https://voltageapi.com/v1`)
 - **Timeout**: Request timeout in milliseconds (default: 30000)
 
 ### Node Parameters

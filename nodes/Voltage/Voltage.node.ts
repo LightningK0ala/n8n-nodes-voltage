@@ -162,9 +162,26 @@ export class Voltage implements INodeType {
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
+					let errorMessage = error instanceof Error ? error.message : String(error);
+					let errorDetails: any = {};
+
+					// Check if it's a VoltageApiError with more details
+					if (error && typeof error === 'object' && 'status' in error) {
+						errorDetails = {
+							status: (error as any).status,
+							code: (error as any).code,
+							details: (error as any).details,
+						};
+						// Provide more helpful message for JSON parsing errors
+						if (errorMessage === 'Failed to parse response as JSON') {
+							errorMessage = `API returned non-JSON response (Status: ${(error as any).status}). Check your API credentials and organization ID.`;
+						}
+					}
+
 					returnData.push({
 						json: {
-							error: error instanceof Error ? error.message : String(error),
+							error: errorMessage,
+							errorDetails,
 						},
 						pairedItem: {
 							item: i,
@@ -172,9 +189,24 @@ export class Voltage implements INodeType {
 					});
 					continue;
 				}
+
+				// Enhanced error message for better debugging
+				let enhancedError = error;
+				if (
+					error &&
+					typeof error === 'object' &&
+					'message' in error &&
+					(error as any).message === 'Failed to parse response as JSON'
+				) {
+					const apiError = error as any;
+					enhancedError = new Error(
+						`Voltage API returned non-JSON response (Status: ${apiError.status}). This usually indicates an authentication issue or invalid organization ID. Please check your API credentials and organization ID.`,
+					);
+				}
+
 				throw new NodeOperationError(
 					this.getNode(),
-					error instanceof Error ? error : new Error(String(error)),
+					enhancedError instanceof Error ? enhancedError : new Error(String(enhancedError)),
 					{
 						itemIndex: i,
 					},

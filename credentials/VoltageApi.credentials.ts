@@ -20,7 +20,7 @@ export class VoltageApi implements ICredentialType {
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'string',
-			default: 'https://voltageapi.com/api/v1',
+			default: 'https://voltageapi.com/v1',
 			description: 'The base URL for the Voltage API',
 		},
 		{
