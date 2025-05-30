@@ -1,139 +1,143 @@
 # n8n Voltage Node
 
-A custom n8n community node for integrating with the Voltage API. This node allows you to interact with Voltage's Bitcoin Lightning Network services directly from your n8n workflows and **is fully compatible with AI agents**.
+A custom n8n community node for integrating with the Voltage API. This node allows you to interact with Voltage's Bitcoin Lightning Network services directly from your n8n workflows.
 
 ## Features
 
-### Wallet Operations
-
 - **Get All Wallets**: Retrieve all wallets in an organization
 - **Get Wallet**: Retrieve a specific wallet by ID
-- **Create Wallet**: Create a new Lightning wallet
-- **Delete Wallet**: Delete an existing wallet
-
-### AI Agent Integration
-
-- **Fully compatible** with n8n AI agents
-- **Proper TypeScript support** with full type checking
-- **Enhanced error handling** for better AI agent feedback
-- **Structured responses** optimized for AI agent processing
+- **Configurable Authentication**: Support for API key, base URL, and timeout settings
+- **Error Handling**: Robust error handling with detailed error messages
 
 ## Installation
 
+### Prerequisites
+
+1. n8n installed globally: `npm install n8n -g`
+2. The Voltage API SDK linked: `npm link @voltage/api-sdk`
+
+### Install the Node
+
+1. Clone or download this repository
+2. Navigate to the project directory
+3. Install dependencies: `npm install`
+4. Build the project: `npm run build`
+5. Link the node: `npm link`
+6. In your n8n installation directory, link the node: `npm link n8n-nodes-voltage`
+
+### Alternative Installation (Development)
+
+For development, you can install directly from the source:
+
 ```bash
-npm install n8n-nodes-voltage
+# In your n8n custom nodes directory (~/.n8n/custom/)
+git clone <this-repository>
+cd n8n-nodes-voltage
+npm install
+npm run build
 ```
 
-## Prerequisites
+## Configuration
 
-1. A Voltage Cloud account
-2. API access credentials
-3. Organization ID from your Voltage dashboard
+### Credentials
 
-## Setup
+The node requires Voltage API credentials with the following fields:
 
-### 1. Get Your API Credentials
-
-1. Log in to [Voltage Cloud](https://voltage.cloud)
-2. Navigate to your organization settings
-3. Generate an API key
-4. Note your Organization ID
-
-### 2. Configure in n8n
-
-1. In n8n, add the **Voltage** node to your workflow
-2. Create new credentials:
-   - **Name**: VoltageApi
-   - **API Key**: Your Voltage API key
-
-## Usage
+- **API Key**: Your Voltage API key (starts with `vltg_`)
+- **Base URL**: The Voltage API base URL (default: `https://voltageapi.com/v1`)
+- **Timeout**: Request timeout in milliseconds (default: 30000)
 
 ### Node Parameters
 
-- **Resource**: Choose "Wallet"
+- **Resource**: Currently supports "Wallet"
 - **Operation**:
-  - "Get All" - Get all wallets in organization
-  - "Get" - Get specific wallet by ID
-  - "Create" - Create a new wallet
-  - "Delete" - Delete an existing wallet
+  - "Get All" - Retrieve all wallets in an organization
+  - "Get" - Retrieve a specific wallet by ID
 - **Organization ID**: The organization ID to query (required)
-- **Wallet ID**: The specific wallet ID (required for "Get" and "Delete" operations)
-- **Wallet Details**: JSON object with wallet configuration (for "Create" operation)
+- **Wallet ID**: The specific wallet ID (required for "Get" operation)
 
-### Wallet Creation Details
+## Usage
 
-When creating a wallet, provide a JSON object with:
+1. Add the Voltage node to your workflow
+2. Configure the credentials with your Voltage API key
+3. Set the organization ID
+4. Choose the operation (Get All or Get specific wallet)
+5. If getting a specific wallet, provide the wallet ID
+6. Execute the workflow
+
+## Example Workflow
 
 ```json
 {
-	"name": "My AI Wallet",
-	"network": "mainnet",
-	"environment_id": "your_environment_id",
-	"line_of_credit_id": "your_line_of_credit_id",
-	"limit": 1000000,
-	"metadata": {
-		"purpose": "AI agent payments"
-	}
+	"nodes": [
+		{
+			"name": "Get Wallets",
+			"type": "n8n-nodes-voltage.voltage",
+			"parameters": {
+				"resource": "wallet",
+				"operation": "getAll",
+				"organizationId": "your-organization-id"
+			},
+			"credentials": {
+				"voltageApi": "your-voltage-credentials"
+			}
+		}
+	]
 }
 ```
 
-## AI Agent Usage
-
-### Setting Up with AI Agents
-
-1. Add the **AI Agent** node to your workflow
-2. Connect the **Voltage** node as a tool to your AI Agent
-3. Configure your AI agent's system message to include Bitcoin/Lightning context
-4. The AI agent can now autonomously:
-   - Manage Lightning wallets
-   - Check wallet balances
-   - Create wallets for different purposes
-   - Monitor wallet status
-
-### Example AI Agent Prompts
-
-```
-"Create a new Lightning wallet for micropayments"
-"Check the balance of wallet abc123"
-"List all available wallets in our organization"
-"Delete the test wallet xyz789"
-```
-
-## Payment Operations (Coming Soon)
-
-The current SDK only supports wallet management operations. Payment operations (sending/receiving) will be added in a future version using the Voltage HTTP API directly.
-
-## Error Handling
-
-The node includes comprehensive error handling:
-
-- **Authentication errors**: Clear messages about API key issues
-- **Network errors**: Timeout and connectivity information
-- **Validation errors**: Detailed parameter validation feedback
-- **API errors**: Voltage-specific error details with status codes
-
 ## Development
 
-To build this project:
+### Project Structure
+
+```
+├── credentials/
+│   └── VoltageApi.credentials.ts    # Credential definition
+├── nodes/
+│   └── Voltage/
+│       ├── Voltage.node.ts          # Main node implementation
+│       ├── Voltage.node.json        # Node metadata
+│       └── voltage.svg              # Node icon
+├── package.json                     # Package configuration
+├── tsconfig.json                    # TypeScript configuration
+└── README.md                        # This file
+```
+
+### Building
 
 ```bash
 npm run build
 ```
 
-To run in development mode:
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-## Support
+## Dependencies
 
-For issues related to:
+- **@voltage/api-sdk**: The official Voltage API SDK
+- **n8n-workflow**: n8n workflow types and utilities
+- **n8n-core**: n8n core functionality
 
-- **This n8n node**: Open an issue on this repository
-- **Voltage API**: Check [Voltage Documentation](https://docs.voltage.cloud)
-- **n8n platform**: Visit [n8n Community](https://community.n8n.io)
+## API Reference
+
+This node uses the [Voltage API SDK](https://github.com/voltage-api/sdk) to interact with the Voltage API. For detailed API documentation, visit [https://voltageapi.com/docs](https://voltageapi.com/docs).
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Support
+
+For issues related to this n8n node, please open an issue in this repository.
+For Voltage API support, visit [https://voltageapi.com/docs](https://voltageapi.com/docs).

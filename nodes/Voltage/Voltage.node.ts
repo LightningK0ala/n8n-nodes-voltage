@@ -8,17 +8,17 @@ import {
 	IDataObject,
 } from 'n8n-workflow';
 
-import { VoltageClient, type VoltageApiConfig } from 'voltage-api-sdk';
+declare const require: any;
 
 export class Voltage implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Voltage',
 		name: 'voltage',
 		icon: 'file:voltage.svg',
-		group: ['ai', 'transform'],
+		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-		description: 'Bitcoin Lightning Network operations via Voltage API - compatible with AI agents',
+		description: 'Interact with Voltage API',
 		defaults: {
 			name: 'Voltage',
 		},
@@ -67,18 +67,6 @@ export class Voltage implements INodeType {
 						description: 'Get a specific wallet by ID',
 						action: 'Get a wallet',
 					},
-					{
-						name: 'Create',
-						value: 'create',
-						description: 'Create a new wallet',
-						action: 'Create a wallet',
-					},
-					{
-						name: 'Delete',
-						value: 'delete',
-						description: 'Delete a wallet',
-						action: 'Delete a wallet',
-					},
 				],
 				default: 'getAll',
 			},
@@ -88,7 +76,7 @@ export class Voltage implements INodeType {
 				type: 'string',
 				required: true,
 				default: '',
-				description: 'The organization ID to operate on',
+				description: 'The organization ID to get wallets from',
 			},
 			{
 				displayName: 'Wallet ID',
@@ -97,25 +85,11 @@ export class Voltage implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'delete'],
+						operation: ['get'],
 					},
 				},
 				default: '',
-				description: 'The specific wallet ID',
-			},
-			{
-				displayName: 'Wallet Details',
-				name: 'walletDetails',
-				type: 'json',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['create'],
-					},
-				},
-				default:
-					'{\n  "name": "My Wallet",\n  "network": "mainnet",\n  "environment_id": "env_id",\n  "line_of_credit_id": "loc_id"\n}',
-				description: 'Wallet creation details',
+				description: 'The specific wallet ID to retrieve',
 			},
 		],
 	};
@@ -127,11 +101,15 @@ export class Voltage implements INodeType {
 		// Get credentials
 		const credentials = await this.getCredentials('voltageApi');
 
-		// Initialize Voltage client with proper typing
+		// Import the voltage-api-sdk CommonJS version directly
+		const { VoltageClient } = require('voltage-api-sdk');
+
+		// Initialize Voltage client
 		const client = new VoltageClient({
 			apiKey: credentials.apiKey as string,
-			// baseUrl: credentials.baseUrl as string, // Uncomment if custom baseUrl is needed
-		} as VoltageApiConfig);
+			baseUrl: credentials.baseUrl as string,
+			timeout: credentials.timeout as number,
+		});
 
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
@@ -180,44 +158,6 @@ export class Voltage implements INodeType {
 								item: i,
 							},
 						});
-					} else if (operation === 'create') {
-						// Create a new wallet
-						const organizationId = this.getNodeParameter('organizationId', i) as string;
-						const walletDetails = this.getNodeParameter('walletDetails', i) as IDataObject;
-
-						await client.createWallet({
-							organization_id: organizationId,
-							wallet: walletDetails as any, // Type assertion for wallet details
-						});
-
-						returnData.push({
-							json: {
-								message: 'Wallet creation initiated successfully',
-								organization_id: organizationId,
-								wallet_details: walletDetails,
-							},
-							pairedItem: {
-								item: i,
-							},
-						});
-					} else if (operation === 'delete') {
-						// Delete a wallet
-						const organizationId = this.getNodeParameter('organizationId', i) as string;
-						const walletId = this.getNodeParameter('walletId', i) as string;
-
-						await client.deleteWallet({
-							organization_id: organizationId,
-							wallet_id: walletId,
-						});
-
-						returnData.push({
-							json: {
-								message: 'Wallet deleted successfully',
-							},
-							pairedItem: {
-								item: i,
-							},
-						});
 					}
 				}
 			} catch (error) {
@@ -232,11 +172,9 @@ export class Voltage implements INodeType {
 							code: (error as any).code,
 							details: (error as any).details,
 						};
-						// Provide more helpful messages for different operations
+						// Provide more helpful message for JSON parsing errors
 						if (errorMessage === 'Failed to parse response as JSON') {
-							if (resource === 'wallet') {
-								errorMessage = `Wallet operation failed (Status: ${(error as any).status}). Check wallet ID and organization ID.`;
-							}
+							errorMessage = `API returned non-JSON response (Status: ${(error as any).status}). Check your API credentials and organization ID.`;
 						}
 					}
 
@@ -244,7 +182,6 @@ export class Voltage implements INodeType {
 						json: {
 							error: errorMessage,
 							errorDetails,
-							operation: `${resource}:${operation}`,
 						},
 						pairedItem: {
 							item: i,
@@ -262,11 +199,9 @@ export class Voltage implements INodeType {
 					(error as any).message === 'Failed to parse response as JSON'
 				) {
 					const apiError = error as any;
-					if (resource === 'wallet') {
-						enhancedError = new Error(
-							`Wallet operation failed (Status: ${apiError.status}). This usually indicates an authentication issue or invalid organization ID. Please check your API credentials and organization ID.`,
-						);
-					}
+					enhancedError = new Error(
+						`Voltage API returned non-JSON response (Status: ${apiError.status}). This usually indicates an authentication issue or invalid organization ID. Please check your API credentials and organization ID.`,
+					);
 				}
 
 				throw new NodeOperationError(
