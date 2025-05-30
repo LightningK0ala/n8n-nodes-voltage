@@ -1,9 +1,15 @@
 {
 	"name": "n8n-nodes-voltage",
-	"version": "0.1.4",
-	"description": "n8n community node to connect to Voltage API",
+	"version": "0.1.5",
+	"description": "n8n community node to connect to Voltage API for Lightning Network payments - AI agent compatible",
 	"keywords": [
-		"n8n-community-node-package"
+		"n8n-community-node-package",
+		"ai-tools",
+		"bitcoin",
+		"lightning-network",
+		"payments",
+		"cryptocurrency",
+		"voltage"
 	],
 	"license": "MIT",
 	"homepage": "https://voltageapi.com",

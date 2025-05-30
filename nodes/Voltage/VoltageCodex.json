@@ -1,0 +1,68 @@
+{
+	"node": "n8n-nodes-voltage.voltage",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Finance", "AI Tools", "Cryptocurrency", "Lightning Network"],
+	"description": "Bitcoin Lightning Network wallet management via Voltage API - enables AI agents to create, manage, and monitor Lightning wallets with full TypeScript support",
+	"alias": ["bitcoin", "lightning", "wallet", "cryptocurrency", "voltage", "management"],
+	"resources": {
+		"primaryDocumentation": [
+			{
+				"url": "https://docs.voltage.cloud/api-resources"
+			}
+		],
+		"credentialDocumentation": [
+			{
+				"url": "https://voltage.cloud/docs"
+			}
+		]
+	},
+	"subcategories": {
+		"Finance": ["Wallet Management", "Cryptocurrency"],
+		"AI Tools": ["Lightning Network", "Bitcoin Operations"]
+	},
+	"toolDescription": "Manages Bitcoin Lightning Network wallets through Voltage API. Can create new wallets, retrieve wallet information, check balances, and delete wallets. Fully typed with TypeScript for better AI agent integration.",
+	"inputParameters": [
+		{
+			"name": "resource",
+			"description": "The type of resource to operate on",
+			"type": "options",
+			"options": ["wallet"],
+			"required": true
+		},
+		{
+			"name": "operation",
+			"description": "The operation to perform on the resource",
+			"type": "options",
+			"options": ["getAll", "get", "create", "delete"],
+			"required": true
+		},
+		{
+			"name": "organizationId",
+			"description": "The Voltage organization ID",
+			"type": "string",
+			"required": true
+		},
+		{
+			"name": "walletId",
+			"description": "The specific wallet ID (required for get and delete operations)",
+			"type": "string",
+			"required": false
+		},
+		{
+			"name": "walletDetails",
+			"description": "JSON object with wallet configuration for creation",
+			"type": "json",
+			"required": false
+		}
+	],
+	"outputDescription": "Returns wallet information, creation confirmation, or operation status depending on the operation performed",
+	"useCases": [
+		"Create Lightning wallets for different purposes or projects",
+		"Monitor wallet balances and status",
+		"Manage multiple Lightning wallets in an organization",
+		"Retrieve wallet information for reporting",
+		"Clean up unused or test wallets"
+	],
+	"whenToUse": "When you need to manage Bitcoin Lightning Network wallets programmatically, create wallets for AI agent operations, or integrate Lightning wallet functionality into automated workflows."
+}
