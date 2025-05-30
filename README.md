@@ -69,20 +69,20 @@ The node requires Voltage API credentials with the following fields:
 
 ```json
 {
-  "nodes": [
-    {
-      "name": "Get Wallets",
-      "type": "n8n-nodes-voltage.voltage",
-      "parameters": {
-        "resource": "wallet",
-        "operation": "getAll",
-        "organizationId": "your-organization-id"
-      },
-      "credentials": {
-        "voltageApi": "your-voltage-credentials"
-      }
-    }
-  ]
+	"nodes": [
+		{
+			"name": "Get Wallets",
+			"type": "n8n-nodes-voltage.voltage",
+			"parameters": {
+				"resource": "wallet",
+				"operation": "getAll",
+				"organizationId": "your-organization-id"
+			},
+			"credentials": {
+				"voltageApi": "your-voltage-credentials"
+			}
+		}
+	]
 }
 ```
 

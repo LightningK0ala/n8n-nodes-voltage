@@ -33,7 +33,7 @@
 		"dist"
 	],
 	"dependencies": {
-		"voltage-api-sdk": "^0.1.0"
+		"voltage-api-sdk": "^0.1.1"
 	},
 	"n8n": {
 		"n8nNodesApiVersion": 1,
