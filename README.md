@@ -6,7 +6,7 @@ A custom n8n community node for integrating with the Voltage API. This node allo
 
 - **Get All Wallets**: Retrieve all wallets in an organization
 - **Get Wallet**: Retrieve a specific wallet by ID
-- **Create Payment Request**: Create Lightning, On-chain, or BIP21 payment requests (invoices) with automatic polling
+- **Create Payment Request**: Create Lightning, On-chain, or BIP21 payment requests (invoices) with automatic polling and auto-generated payment IDs
 - **Get Payment**: Retrieve payment details by ID
 - **Configurable Authentication**: Support for API key, base URL, and timeout settings
 - **Error Handling**: Robust error handling with detailed error messages
@@ -96,7 +96,7 @@ The node requires Voltage API credentials with the following fields:
 3. Set the resource to "Payment"
 4. Set the organization ID and environment ID
 5. Choose the operation:
-   - **Create Payment Request**: Fill in wallet ID, payment kind, currency, amount, and description
+   - **Create Payment Request**: Fill in wallet ID, payment kind, currency, amount, and description (payment IDs are automatically generated)
    - **Get Payment**: Provide the payment ID to retrieve
 6. Execute the workflow
 

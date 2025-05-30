@@ -361,11 +361,8 @@ export class Voltage implements INodeType {
 						const description = this.getNodeParameter('description', i) as string;
 						const additionalOptions = this.getNodeParameter('additionalOptions', i) as IDataObject;
 
-						// Generate a unique payment ID
-						const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
 						const paymentData = {
-							id: paymentId,
+							// id is optional - SDK will auto-generate if not provided
 							wallet_id: paymentWalletId,
 							currency: currency as 'btc' | 'usd',
 							payment_kind: paymentKind as 'bolt11' | 'onchain' | 'bip21',
