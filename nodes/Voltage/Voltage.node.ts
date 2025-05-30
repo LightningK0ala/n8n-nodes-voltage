@@ -8,7 +8,7 @@ import {
 	IDataObject,
 } from 'n8n-workflow';
 
-declare const require: any;
+import { VoltageClient } from 'voltage-api-sdk';
 
 export class Voltage implements INodeType {
 	description: INodeTypeDescription = {
@@ -289,9 +289,6 @@ export class Voltage implements INodeType {
 
 		// Get credentials
 		const credentials = await this.getCredentials('voltageApi');
-
-		// Import the voltage-api-sdk CommonJS version directly
-		const { VoltageClient } = require('voltage-api-sdk');
 
 		// Initialize Voltage client
 		const client = new VoltageClient({

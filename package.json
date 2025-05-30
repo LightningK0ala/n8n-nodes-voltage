@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-voltage",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "n8n community node to connect to Voltage API",
 	"keywords": [
 		"n8n-community-node-package"
@@ -33,7 +33,7 @@
 		"dist"
 	],
 	"dependencies": {
-		"voltage-api-sdk": "^0.1.3"
+		"voltage-api-sdk": "^0.2.2"
 	},
 	"n8n": {
 		"n8nNodesApiVersion": 1,
